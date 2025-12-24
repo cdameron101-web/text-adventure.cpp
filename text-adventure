@@ -1,0 +1,269 @@
+#include <iostream>
+#include <string>
+#include <limits>
+
+using namespace std;
+
+int readChoice(int minC, int maxC) {
+  int c;
+  while (true) {
+    cout << "> ";
+    if (cin >> c && c >= minC && c <= maxC) return c;
+    cout << "Invalid input. Enter a number between " << minC << " and " << maxC << ".\n";
+    cin.clear();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+  }
+}
+
+int main() {
+  // VAULT AT 3AM - Heist Text Adventure
+  int health = 3;
+  int suspicion = 0;      // 0-5; at 5 you get caught
+  int timeLeft = 8;       // each action costs time
+  bool hasKeycard = false;
+  bool hasCode = false;
+  bool hasDisguise = false;
+  bool camerasLooped = false;
+  bool vaultOpen = false;
+
+  cout << "=== VAULT AT 3AM ===\n";
+  cout << "You are inside the Meridian Bank after hours.\n";
+  cout << "Your goal: open the vault and leave without getting caught.\n";
+  cout << "Tip: Keep suspicion low and watch the clock.\n\n";
+
+  while (true) {
+    // Lose conditions
+    if (health <= 0) {
+      cout << "\nYou stumble, bleeding, as footsteps close in.\n";
+      cout << "You got caught. Game over.\n";
+      break;
+    }
+    if (suspicion >= 5) {
+      cout << "\nSecurity locks down the building.\n";
+      cout << "You got caught. Game over.\n";
+      break;
+    }
+    if (timeLeft <= 0) {
+      cout << "\nA distant radio crackles: \"Morning crew arriving.\"\n";
+      cout << "Time’s up. You got caught. Game over.\n";
+      break;
+    }
+
+    // Win condition
+    if (vaultOpen) {
+      cout << "\nYou slip into the service stairwell with the prize.\n";
+      if (camerasLooped || hasDisguise) {
+        cout << "No alarms. No witnesses. Clean exit.\n";
+        cout << "You win! 💼💎\n";
+      } else {
+        cout << "A camera catches your face for a second…\n";
+        cout << "You escape, but they’ll be looking.\n";
+        cout << "You win… kinda. 😬\n";
+      }
+      break;
+    }
+
+    // HUD
+    cout << "\n--- STATUS ---\n";
+    cout << "Health: " << health
+         << " | Suspicion: " << suspicion << "/5"
+         << " | Time: " << timeLeft
+         << " | Keycard: " << (hasKeycard ? "Yes" : "No")
+         << " | Code: " << (hasCode ? "Yes" : "No")
+         << " | Disguise: " << (hasDisguise ? "Yes" : "No")
+         << " | Cameras Looped: " << (camerasLooped ? "Yes" : "No") << "\n";
+    cout << "--------------\n\n";
+
+    cout << "Where do you go?\n";
+    cout << "1) Lobby\n";
+    cout << "2) Security Room\n";
+    cout << "3) Manager's Office\n";
+    cout << "4) Vault Door\n";
+    cout << "5) Quit\n";
+
+    int area = readChoice(1, 5);
+    if (area == 5) {
+      cout << "You decide the risk isn’t worth it and slip out. Quit.\n";
+      break;
+    }
+
+    // Every move costs time
+    timeLeft -= 1;
+
+    // LOBBY
+    if (area == 1) {
+      cout << "\nYou step into the marble Lobby. The night guard’s route passes here.\n";
+      cout << "1) Search behind the reception desk\n";
+      cout << "2) Blend in (practice your 'I belong here' walk)\n";
+      cout << "3) Check the coat rack\n";
+      cout << "4) Go back\n";
+      int c = readChoice(1, 4);
+
+      if (c == 1) {
+        cout << "\nYou quietly open drawers...\n";
+        if (!hasDisguise) {
+          cout << "You find a staff blazer and badge lanyard. Disguise acquired.\n";
+          hasDisguise = true;
+          suspicion = max(0, suspicion - 1); // disguise helps
+        } else {
+          cout << "Just paperwork and dusty pens.\n";
+        }
+      } else if (c == 2) {
+        cout << "\nYou move confidently, like you own the place.\n";
+        if (hasDisguise) {
+          cout << "The cameras see 'staff.' Suspicion -1.\n";
+          suspicion = max(0, suspicion - 1);
+        } else {
+          cout << "A camera tracks you a little too long. Suspicion +1.\n";
+          suspicion += 1;
+        }
+      } else if (c == 3) {
+        cout << "\nYou check the coat rack...\n";
+        if (!hasKeycard) {
+          cout << "A keycard is clipped inside a guard jacket pocket. Keycard acquired.\n";
+          hasKeycard = true;
+        } else {
+          cout << "Nothing useful.\n";
+        }
+      } else {
+        cout << "You retreat to the hallway.\n";
+      }
+    }
+
+    // SECURITY ROOM
+    else if (area == 2) {
+      cout << "\nYou reach the Security Room. Monitors glow in the dark.\n";
+      cout << "1) Loop the cameras (requires keycard)\n";
+      cout << "2) Open the incident log\n";
+      cout << "3) Hide and wait (costs 1 extra time)\n";
+      cout << "4) Go back\n";
+      int s = readChoice(1, 4);
+
+      if (s == 1) {
+        if (!hasKeycard) {
+          cout << "\nAccess denied. You need a keycard.\n";
+          suspicion += 1;
+        } else {
+          cout << "\nKeycard accepted.\n";
+          cout << "Loop cameras for 3 minutes? (reduces suspicion risk)\n";
+          cout << "1) Yes\n";
+          cout << "2) No\n";
+          int yn = readChoice(1, 2);
+          if (yn == 1) {
+            camerasLooped = true;
+            cout << "Cameras are now looping. Nice.\n";
+          } else {
+            cout << "You back away from the console.\n";
+          }
+        }
+      } else if (s == 2) {
+        cout << "\nIncident log note: \"Manager uses code = 431 on odd nights.\"\n";
+        cout << "That sounds… like tonight.\n";
+        hasCode = true;
+      } else if (s == 3) {
+        cout << "\nYou hide behind a server rack and wait for footsteps to pass...\n";
+        timeLeft -= 1; // extra time cost
+        suspicion = max(0, suspicion - 1);
+        cout << "Quiet again. Suspicion -1.\n";
+      } else {
+        cout << "You slip back into the corridor.\n";
+      }
+    }
+
+    // MANAGER'S OFFICE
+    else if (area == 3) {
+      cout << "\nManager’s Office: leather chair, framed awards, locked drawer.\n";
+      cout << "1) Search desk\n";
+      cout << "2) Try the locked drawer (risky)\n";
+      cout << "3) Look behind the painting\n";
+      cout << "4) Go back\n";
+      int o = readChoice(1, 4);
+
+      if (o == 1) {
+        cout << "\nYou search the desk...\n";
+        if (!hasCode) {
+          cout << "You find a sticky note that says: \"VAULT: 431\".\n";
+          hasCode = true;
+        } else {
+          cout << "Mostly memos and a fancy pen.\n";
+        }
+      } else if (o == 2) {
+        cout << "\nYou jiggle the drawer—CLICK—\n";
+        cout << "An alarm chirps briefly.\n";
+        suspicion += 2;
+        cout << "You cut your finger on a sharp edge. -1 health.\n";
+        health -= 1;
+        if (!hasKeycard) {
+          cout << "Inside: a spare keycard! Keycard acquired.\n";
+          hasKeycard = true;
+        } else {
+          cout << "Nothing you don’t already have.\n";
+        }
+      } else if (o == 3) {
+        cout << "\nBehind the painting is a small safe...\n";
+        cout << "It’s open. Inside is a note: \"If questioned, say you’re IT.\"\n";
+        if (!hasDisguise) {
+          cout << "You also find a visitor badge. Disguise acquired.\n";
+          hasDisguise = true;
+        } else {
+          cout << "Nothing else.\n";
+        }
+      } else {
+        cout << "You leave quietly.\n";
+      }
+    }
+
+    // VAULT DOOR
+    else if (area == 4) {
+      cout << "\nYou stand before the Vault Door. It has a keypad and card reader.\n";
+      cout << "1) Swipe keycard\n";
+      cout << "2) Enter keypad code\n";
+      cout << "3) Try brute force (very risky)\n";
+      cout << "4) Go back\n";
+      int v = readChoice(1, 4);
+
+      if (v == 1) {
+        if (hasKeycard) {
+          cout << "\nCard accepted. Now it wants a code.\n";
+          suspicion += (camerasLooped ? 0 : 1);
+        } else {
+          cout << "\nYou don’t have a keycard.\n";
+          suspicion += 1;
+        }
+      } else if (v == 2) {
+        if (!hasCode) {
+          cout << "\nYou don’t know the code yet.\n";
+          suspicion += 1;
+        } else {
+          cout << "\nEnter the 3-digit code:\n";
+          cout << "1) 431\n";
+          cout << "2) 314\n";
+          cout << "3) 123\n";
+          int code = readChoice(1, 3);
+
+          if (code == 1) {
+            cout << "\nBEEP... BEEP... CLICK.\n";
+            cout << "Vault door unlocks.\n";
+            vaultOpen = true;
+          } else {
+            cout << "\nWrong code. The keypad flashes red.\n";
+            suspicion += 2;
+            if (!camerasLooped) {
+              cout << "A camera zooms in. Suspicion rises fast.\n";
+            }
+          }
+        }
+      } else if (v == 3) {
+        cout << "\nYou try brute force...\n";
+        suspicion += 3;
+        health -= 1;
+        cout << "A shock from the panel hits you. -1 health.\n";
+        cout << "The vault remains sealed.\n";
+      } else {
+        cout << "You step away from the vault.\n";
+      }
+    }
+  }
+
+  return 0;
+}
